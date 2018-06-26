@@ -21,6 +21,44 @@ namespace EPPlus.DataTableToExcel
             InitializeComponent();
         }
 
+        public static DataTable ImportToDataTable(string SheetName)
+        {
+            var rootFolder = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.FullName;
+            DataTable dt = new DataTable();
+            FileInfo fi = new FileInfo($"{rootFolder}\\mdb\\test.xlsx");
+
+            // Check if the file exists
+            if (!fi.Exists)
+                throw new Exception("File Does Not Exists");
+
+            using (ExcelPackage xlPackage = new ExcelPackage(fi))
+            {
+                // get the first worksheet in the workbook
+                ExcelWorksheet worksheet = xlPackage.Workbook.Worksheets[SheetName];
+
+                // Fetch the WorkSheet size
+                ExcelCellAddress startCell = worksheet.Dimension.Start;
+                ExcelCellAddress endCell = worksheet.Dimension.End;
+
+                // create all the needed DataColumn
+                for (int col = startCell.Column; col <= endCell.Column; col++)
+                    dt.Columns.Add(col.ToString());
+
+                // place all the data into DataTable
+                for (int row = startCell.Row; row <= endCell.Row; row++)
+                {
+                    DataRow dr = dt.NewRow();
+                    int x = 0;
+                    for (int col = startCell.Column; col <= endCell.Column; col++)
+                    {
+                        dr[x++] = worksheet.Cells[row, col].Value;
+                    }
+                    dt.Rows.Add(dr);
+                }
+            }
+            return dt;
+        }
+
         private void button1_Click(object sender, EventArgs e)
         {
             var rootFolder = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.FullName;
@@ -63,6 +101,11 @@ namespace EPPlus.DataTableToExcel
                 MessageBox.Show("Nothing to export!");
             }
            
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            ImportToDataTable("Sheet2");
         }
     }
 }
